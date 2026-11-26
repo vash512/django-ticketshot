@@ -1,0 +1,15 @@
+{% extends "ticketshot/panel/base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Debug" %} {{ ticket.key }}{% endblock %}
+{% block content %}
+<p class="tsp-back"><a href="{% url 'ticketshot:panel_detail' ticket.key %}">← {{ ticket.key }}</a></p>
+<div class="tsp-head">
+  <h1>{% translate "Debug log" %}</h1>
+  <p class="tsp-lead tsp-break">{{ record.method }} {{ record.path }} · {{ record.status_code|default:"—" }} · {{ record.duration_ms|floatformat:0 }} ms · {{ record.created_at|date:"d M Y H:i:s" }}</p>
+  <p class="tsp-muted">{% translate "Only users with debug permission can view this. Keys, passwords, and tokens are redacted." %}</p>
+</div>
+{% if exception %}
+<section class="tsp-card"><h2>{% translate "Exception" %}</h2><pre class="tsp-pre">{{ exception }}</pre></section>
+{% endif %}
+<section class="tsp-card"><h2>{% translate "Request data" %}</h2><pre class="tsp-pre">{{ data_json }}</pre></section>
+{% endblock %}

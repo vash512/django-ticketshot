@@ -1,0 +1,34 @@
+{% extends "ticketshot/panel/base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Review queue" %}{% endblock %}
+{% block content %}
+<div class="tsp-head"><h1>{% translate "Review queue" %}</h1><p class="tsp-lead">{% translate "The oldest ticket appears first." %}</p></div>
+{% if ticket %}
+<div data-queue data-next-url="{% if next_key %}{% url 'ticketshot:panel_queue' %}?ticket={{ next_key }}{% else %}{% url 'ticketshot:panel_queue' %}{% endif %}">
+  <p class="tsp-queue-position">{% blocktranslate with position=position total=total %}{{ position }} of {{ total }}{% endblocktranslate %} · <a href="{% url 'ticketshot:panel_detail' ticket.key %}">{{ ticket.key }}</a> <span class="tsp-pill s-in_review">{% translate "In review" %}</span></p>
+  <p id="tsp-queue-live" role="status" aria-live="polite"></p>
+  <div class="tsp-queue-layout">
+    <div class="tsp-queue-main">
+      <section class="tsp-card"><h2>{% translate "Compare with the live view" %}</h2>
+        <div class="tsp-compare-controls"><button class="tsp-btn" type="button" data-mode="side" aria-pressed="true">{% translate "Side by side" %}</button><button class="tsp-btn" type="button" data-mode="overlay" aria-pressed="false">{% translate "Overlay" %}</button><label class="tsp-field tsp-opacity" hidden>{% translate "Capture opacity" %} <input type="range" min="0" max="100" value="50" data-opacity></label>{% if review_path %}<a class="tsp-btn" href="{{ review_path }}" target="_blank" rel="noopener">{% translate "Open in a new tab" %}</a>{% endif %}</div>
+        <div class="tsp-compare" data-compare>
+          <div class="tsp-capture"><h3>{% translate "Original capture" %}</h3>{% if images %}<img data-overlay-image src="{% url 'ticketshot:image' images.0.pk %}" alt="Captura original de {{ ticket.key }}">{% else %}<p class="tsp-muted">{% translate "No captures." %}</p>{% endif %}</div>
+          <div class="tsp-live-view"><h3>{% translate "Live view" %}</h3>{% if review_path %}<iframe src="{{ review_path }}" title="{% blocktranslate with key=ticket.key %}Live view of {{ key }}{% endblocktranslate %}" loading="lazy"></iframe>{% else %}<p class="tsp-muted">{% translate "This ticket's saved path is unsafe" %}</p>{% endif %}</div>
+        </div>
+        {% if images|length > 1 %}<div class="tsp-gallery tsp-queue-gallery"><h3>{% translate "All captures" %}</h3>{% for image in images %}<figure class="tsp-figure"><img src="{% url 'ticketshot:image' image.pk %}" alt="Captura {{ forloop.counter }} de {{ ticket.key }}" loading="lazy"><figcaption>{{ image.get_role_display }}{% if image.caption %} · {{ image.caption }}{% endif %}</figcaption></figure>{% endfor %}</div>{% endif %}
+      </section>
+      <section class="tsp-card"><h2>{% translate "What was requested" %}</h2><p class="tsp-note">{{ ticket.note|linebreaksbr }}</p><h2>{% translate "What was implemented" %}</h2><dl class="tsp-dl"><dt>Commit</dt><dd>{{ ticket.implemented_commit|default:"—" }}</dd><dt>{% translate "Branch" %}</dt><dd>{{ ticket.implemented_branch|default:"—" }}</dd><dt>{% translate "Implementation note" %}</dt><dd>{{ ticket.implementation_note|default:"—"|linebreaksbr }}</dd></dl></section>
+    </div>
+    <aside class="tsp-queue-side">
+      {% if can.approve %}<section class="tsp-card tsp-decide"><h2>{% translate "Your decision" %}</h2>
+        <form data-decision method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">{% csrf_token %}<input type="hidden" name="action" value="approve"><label class="tsp-field">{% translate "Comment (optional)" %}<textarea name="text" rows="3"></textarea></label><button class="tsp-btn tsp-primary tsp-block" type="submit">{% translate "Approve" %}</button></form>
+        <form data-decision method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">{% csrf_token %}<input type="hidden" name="action" value="reject"><label class="tsp-field">{% translate "What is still not working?" %}<textarea name="text" rows="3" required></textarea></label><button class="tsp-btn tsp-block" type="submit">{% translate "Still not working" %}</button></form>
+      </section>{% else %}<section class="tsp-card"><p>{% translate "You can view this ticket. Deciding requires approval permission." %}</p></section>{% endif %}
+      {% if next_key %}<a class="tsp-btn tsp-block" href="{% url 'ticketshot:panel_queue' %}?ticket={{ next_key }}" data-skip>{% translate "Skip →" %}</a>{% else %}<a class="tsp-btn tsp-block" href="{% url 'ticketshot:panel_queue' %}" data-skip>{% translate "Return to queue" %}</a>{% endif %}
+      <p class="tsp-muted">{% translate "Shortcuts: A to approve, R to report what still fails, and → to skip." %}</p>
+    </aside>
+  </div>
+</div>
+{% else %}<div class="tsp-empty"><p><strong>{% translate "No tickets awaiting review." %}</strong></p><p>{% translate "When an implementation arrives, it will appear here." %}</p><a class="tsp-btn" href="{% url 'ticketshot:panel' %}">{% translate "Go to board" %}</a></div>{% endif %}
+<script type="module" src="{{ board_js }}"></script>
+{% endblock %}

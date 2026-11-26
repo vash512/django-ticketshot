@@ -1,0 +1,21 @@
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+var/
+media/
+.coverage
+htmlcov/
+
+# Herramientas de ub-mode (crapper, dryer, mutator)
+.metrics/
+target/
+
+# Local only
+CLAUDE.md
+.claude/
+*.sqlite3
+.env
+.env.*

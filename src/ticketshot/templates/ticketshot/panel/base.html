@@ -1,0 +1,28 @@
+{% load i18n %}
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{% translate "Tickets" %}{% endblock %} · ticketshot</title>
+  <link rel="stylesheet" href="{{ css }}">
+</head>
+<body class="tsp">
+  <header class="tsp-top">
+    <a class="tsp-brand" href="{% url 'ticketshot:panel' %}">ticketshot <span class="tsp-project">{{ project }}</span></a>
+    <form class="tsp-top-search" action="{% url 'ticketshot:panel' %}" method="get" role="search"><label for="tsp-top-query" class="tsp-visually-hidden">{% translate "Search tickets" %}</label><input id="tsp-top-query" type="search" name="q" value="{{ query|default:'' }}" placeholder="{% translate "Search tickets" %}"><button class="tsp-btn" type="submit">{% translate "Search" %}</button></form>
+    <nav class="tsp-view-nav" aria-label="{% translate "Panel views" %}">
+      <a href="{% url 'ticketshot:panel' %}"{% if request.resolver_match.url_name == 'panel' and request.GET.view != 'list' %} aria-current="page"{% endif %}>{% translate "Board" %}</a>
+      <a href="{% url 'ticketshot:panel' %}?view=list"{% if request.GET.view == 'list' %} aria-current="page"{% endif %}>{% translate "List" %}</a>
+      <a href="{% url 'ticketshot:panel_queue' %}"{% if request.resolver_match.url_name == 'panel_queue' %} aria-current="page"{% endif %}>{% translate "Review queue" %} (<span data-review-count>{{ review_count }}</span>)</a>
+    </nav>
+    {% if review_branch %}<span class="tsp-chip" title="{% translate 'Review branch' %}">{% translate "Branch" %} {{ review_branch }}</span>{% endif %}
+    <span class="tsp-grow"></span>
+    <span class="tsp-user">{{ user_label }}</span>
+  </header>
+  <main class="tsp-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

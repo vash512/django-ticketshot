@@ -1,0 +1,56 @@
+{% extends "ticketshot/panel/base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Board" %}{% endblock %}
+{% block content %}
+<div class="tsp-head"><h1>{% translate "Ticket board" %}</h1><p class="tsp-lead">{% translate "Drag a card or use “Move to…” to change its status." %}</p></div>
+<form class="tsp-filters tsp-board-filters" method="get" role="search">
+  <label class="tsp-field tsp-field-grow"><span>{% translate "Search" %}</span><input type="search" name="q" value="{{ query }}" placeholder="{% translate "Key, text, path, or author" %}"></label>
+  <label class="tsp-field"><span>{% translate "Device" %}</span><select name="device"><option value="">{% translate "All" %}</option>{% for value, label in devices %}<option value="{{ value }}"{% if value == device %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label class="tsp-check"><input type="checkbox" name="unread" value="1"{% if only_news %} checked{% endif %}>{% translate "With updates" %}</label>
+  <label class="tsp-check"><input type="checkbox" name="recordings" value="1"{% if only_flows %} checked{% endif %}>{% translate "Recorded flows" %}</label>
+  <label class="tsp-check"><input type="checkbox" name="unsolicited" value="1"{% if only_skill %} checked{% endif %}>{% translate "Unsolicited" %}</label>
+  <button class="tsp-btn" type="submit">{% translate "Filter" %}</button>
+</form>
+<form class="tsp-csrf">{% csrf_token %}</form>
+{{ target_map|json_script:"tsp-target-map" }}
+<p id="tsp-board-live" class="tsp-visually-hidden" role="status" aria-live="polite"></p>
+<div class="tsp-board-scroll" aria-label="{% translate "Board columns" %}" tabindex="0">
+  <div class="tsp-board" data-board data-can-approve="{{ can.approve|yesno:'true,false' }}">
+    {% for column in columns %}
+    <section class="tsp-column" data-column="{{ column.status }}" aria-labelledby="column-{{ column.status }}">
+      <h2 id="column-{{ column.status }}">{{ column.title }} <span class="tsp-column-count" data-count>{{ column.count }}</span></h2>
+      <div class="tsp-column-cards" data-cards>
+        {% for t in column.cards %}
+        <article class="tsp-board-card" data-key="{{ t.key }}" data-status="{{ t.status }}" data-targets="{{ t.board_target_values }}" data-action-url="{% url 'ticketshot:ticket_action' t.key %}"{% if t.board_targets %} draggable="true"{% endif %}>
+          <a class="tsp-card-link" href="{% url 'ticketshot:panel_detail' t.key %}">
+            {% if t.first_image_id %}<img class="tsp-thumbnail" src="{% url 'ticketshot:image' t.first_image_id %}" alt="Captura original de {{ t.key }}" loading="lazy">{% else %}<span class="tsp-thumbnail tsp-thumbnail-empty" aria-hidden="true"></span>{% endif %}
+            <span class="tsp-card-content">
+              <span class="tsp-card-head"><strong class="tsp-key">{{ t.key }}</strong>{% if t.is_new %}<span class="tsp-new">{% translate "Updates" %}</span>{% endif %}</span>
+              <span class="tsp-card-note">{{ t.note|truncatechars:125 }}</span>
+              <span class="tsp-chips"><span class="tsp-tag">{{ t.get_device_display }}</span>{% if t.kind == 'recording' %}<span class="tsp-tag">{% translate "Recorded flow" %}</span>{% endif %}{% if t.source == 'skill' %}<span class="tsp-tag">{% translate "Unsolicited" %}</span>{% endif %}{% if t.parent %}<span class="tsp-tag">{% translate "Chained to" %} {{ t.parent.key }}</span>{% endif %}</span>
+              <span class="tsp-card-meta">{{ t.author_label|default:"—" }} · {{ t.updated_at|date:"d M Y" }}</span>
+            </span>
+          </a>
+          <div class="tsp-card-actions">
+            <a class="tsp-btn tsp-open-link" href="{% url 'ticketshot:panel_detail' t.key %}">{% translate "Open" %} {{ t.key }}</a>
+            {% if t.board_targets %}
+            <button class="tsp-btn tsp-move-toggle" type="button" aria-expanded="false">{% translate "Move to…" %}</button>
+            <div class="tsp-move-menu" hidden>{% for target in t.board_targets %}<button class="tsp-btn" type="button" data-move-to="{{ target.status }}">{{ target.label }}</button>{% endfor %}</div>
+            {% if t.status == 'in_review' and can.approve %}<button class="tsp-btn tsp-primary" type="button" data-move-to="approved">{% translate "Approve" %}</button><button class="tsp-btn" type="button" data-move-to="requested">{% translate "Still not working" %}</button>{% endif %}
+            {% else %}
+            <button class="tsp-btn" type="button" disabled>{% translate "Move to…" %}</button>
+            {% endif %}
+          </div>
+        </article>
+        {% empty %}<p class="tsp-column-empty" data-empty>{% translate "No tickets" %}</p>{% endfor %}
+      </div>
+      {% if column.more %}<a class="tsp-more" href="{% url 'ticketshot:panel' %}?view=list&status={{ column.list_filter }}">{% translate "View all" %} {{ column.count }}</a>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+</div>
+<dialog class="tsp-dialog" id="tsp-move-dialog" aria-labelledby="tsp-dialog-title">
+  <form method="dialog"><h2 id="tsp-dialog-title">{% translate "Change note" %}</h2><label class="tsp-field"><span id="tsp-dialog-label">{% translate "Note" %}</span><textarea id="tsp-dialog-text" rows="4"></textarea></label><div class="tsp-dialog-actions"><button class="tsp-btn" value="cancel" formnovalidate>{% translate "Cancel" %}</button><button class="tsp-btn tsp-primary" value="confirm">{% translate "Continue" %}</button></div></form>
+</dialog>
+<script type="module" src="{{ board_js }}"></script>
+{% endblock %}

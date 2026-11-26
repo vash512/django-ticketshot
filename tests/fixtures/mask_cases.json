@@ -1,0 +1,168 @@
+{
+  "_nota": "Casos compartidos: el ocultado de la barra (mask.js) y el del servidor (anonymize.py) dan lo mismo. Generados con mask.js.",
+  "cases": [
+    {
+      "text": "escribe a ana@correo.mx",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "escribe a ••••••••••••"
+    },
+    {
+      "text": "tel 55 1234 5678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "tel ••••••••••••"
+    },
+    {
+      "text": "+52 (55) 1234-5678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "••••••••••••••"
+    },
+    {
+      "text": "2026-11-07 10:30",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "2026-11-07 10:30"
+    },
+    {
+      "text": "Total $1,250.00",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "Total $1,250.00"
+    },
+    {
+      "text": "pedido 123456789",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "pedido 123456789"
+    },
+    {
+      "text": "llamar al 5512345678901234 ya",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "llamar al •••••••••••••• ya"
+    },
+    {
+      "text": "un.correo+etiqueta@sub.dominio.com.mx largo",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "•••••••••••• largo"
+    },
+    {
+      "text": "ñandú@x.mx",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "ñandú@x.mx"
+    },
+    {
+      "text": "a@b sin dominio",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "a@b sin dominio"
+    },
+    {
+      "text": "fecha 2026-11-26 y tel 5512345678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "fecha 2026-11-26 y tel ••••••••••"
+    },
+    {
+      "text": "ana@correo.mx",
+      "patterns": [],
+      "expected": "ana@correo.mx"
+    },
+    {
+      "text": "tel 55 1234 5678 o ana@correo.mx",
+      "patterns": [
+        "phone"
+      ],
+      "expected": "tel •••••••••••• o ana@correo.mx"
+    },
+    {
+      "text": "tel 55 1234 5678 o ana@correo.mx",
+      "patterns": [
+        "email"
+      ],
+      "expected": "tel 55 1234 5678 o ••••••••••••"
+    },
+    {
+      "text": "",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": ""
+    },
+    {
+      "text": "tel 5512345678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "tel 5512345678"
+    },
+    {
+      "text": "tel 55 1234 5678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "tel ••••••••••••"
+    },
+    {
+      "text": "tel 55\u001c1234\u001c5678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "tel 55\u001c1234\u001c5678"
+    },
+    {
+      "text": "tel 55﻿1234﻿5678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "tel ••••••••••••"
+    },
+    {
+      "text": "largo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.mx fin",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "largo aaaaaa•••••••••••• fin"
+    },
+    {
+      "text": "+52 1 55 1234 5678 o +5215512345678",
+      "patterns": [
+        "email",
+        "phone"
+      ],
+      "expected": "•••••••••••••• o ••••••••••••••"
+    }
+  ]
+}

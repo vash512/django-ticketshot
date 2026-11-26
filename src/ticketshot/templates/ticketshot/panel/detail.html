@@ -1,0 +1,190 @@
+{% extends "ticketshot/panel/base.html" %}
+{% load i18n %}
+{% block title %}{{ ticket.key }}{% endblock %}
+{% block content %}
+<p class="tsp-back"><a href="{% url 'ticketshot:panel' %}">{% translate "← All tickets" %}</a></p>
+
+{% if flash_ok %}<p class="tsp-flash is-ok" role="status">{{ flash_ok }}</p>{% endif %}
+{% if flash_error %}<p class="tsp-flash is-error" role="alert">{{ flash_error }}</p>{% endif %}
+
+<div class="tsp-head">
+  <h1><span class="tsp-key">{{ ticket.key }}</span> <span class="tsp-pill s-{{ ticket.status }}">{{ ticket.get_status_display }}</span></h1>
+  <p class="tsp-chips">
+    <span class="tsp-tag">{{ ticket.get_kind_display }}</span>
+    <span class="tsp-tag">{{ ticket.get_device_display }}</span>
+    <span class="tsp-tag">{{ ticket.get_source_display }}</span>
+  </p>
+</div>
+
+<div class="tsp-layout">
+  <div class="tsp-col-main">
+    <section class="tsp-card" aria-labelledby="h-note">
+      <h2 id="h-note">{% translate "What was requested" %}</h2>
+      <div class="tsp-note">{{ ticket.note|linebreaksbr }}</div>
+      {% if ticket.implementation_note %}
+      <h3>{% translate "What was implemented" %}</h3>
+      <div class="tsp-note">{{ ticket.implementation_note|linebreaksbr }}</div>
+      {% endif %}
+    </section>
+
+    <section class="tsp-card" aria-labelledby="h-images">
+      <h2 id="h-images">{% translate "Original capture" %} <span class="tsp-muted">{% translate "· how it looked before the change" %}</span></h2>
+      <div class="tsp-gallery">
+        {% for image in images %}
+        <figure class="tsp-figure">
+          <a href="{% url 'ticketshot:image' image.pk %}" target="_blank" rel="noopener">
+            <img src="{% url 'ticketshot:image' image.pk %}" alt="Captura {{ forloop.counter }} de {{ ticket.key }}" loading="lazy"{% if image.width %} width="{{ image.width }}" height="{{ image.height }}"{% endif %}>
+          </a>
+          <figcaption>
+            <strong>{{ forloop.counter }} · {{ image.get_role_display }}</strong>
+            {% if image.device %}<span>{{ image.get_device_display }}</span>{% endif %}
+            <span>{{ image.get_method_display }}</span>
+            {% if image.caption %}<span>{{ image.caption }}</span>{% endif %}
+            {% if image.page_url %}<span class="tsp-break">{{ image.page_url }}</span>{% endif %}
+          </figcaption>
+        </figure>
+        {% empty %}
+        <p class="tsp-muted">{% translate "No captures." %}</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if ticket.visited_urls|length > 1 or timeline %}
+    <section class="tsp-card" aria-labelledby="h-flow">
+      <h2 id="h-flow">{% translate "Flow" %}</h2>
+      {% if ticket.visited_urls %}
+      <ol class="tsp-urls">{% for url in ticket.visited_urls %}<li class="tsp-break">{{ url }}{% if forloop.first %} <span class="tsp-muted">{% translate "· trigger" %}</span>{% endif %}</li>{% endfor %}</ol>
+      {% endif %}
+      {% if timeline %}
+      <div class="tsp-scroll">
+        <table class="tsp-table">
+          <thead><tr><th>{% translate "Time" %}</th><th>{% translate "Event" %}</th><th>{% translate "Details" %}</th><th>{% translate "Tab" %}</th></tr></thead>
+          <tbody>{% for row in timeline %}<tr><td>{{ row.at }}</td><td>{{ row.label }}</td><td class="tsp-break">{{ row.detail }}</td><td>{{ row.tab }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if can.debug %}
+    <section class="tsp-card" aria-labelledby="h-debug">
+      <h2 id="h-debug">{% translate "Debug log" %} <span class="tsp-muted">{% translate "· server only; reviewers cannot see it" %}</span></h2>
+      {% if debug_records %}
+      <div class="tsp-scroll">
+        <table class="tsp-table">
+          <thead><tr><th>{% translate "Request" %}</th><th>{% translate "View" %}</th><th>{% translate "Response" %}</th><th>ms</th><th></th></tr></thead>
+          <tbody>
+          {% for r in debug_records %}
+          <tr{% if r.failed %} class="is-failed"{% endif %}>
+            <td class="tsp-break">{{ r.method }} {{ r.path|truncatechars:80 }}</td>
+            <td>{{ r.view_name|default:"—" }}</td>
+            <td>{{ r.status_code|default:"—" }}{% if r.failed %} · {% translate "exception" %}{% endif %}</td>
+            <td>{{ r.duration_ms|floatformat:0 }}</td>
+            <td><a href="{% url 'ticketshot:panel_debug' ticket.key r.pk %}">{% translate "View" %}</a></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="tsp-muted">{% translate "This ticket has no debug log (only recorded flows have one)." %}</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="tsp-card" aria-labelledby="h-history">
+      <h2 id="h-history">{% translate "History" %}</h2>
+      <ol class="tsp-history">
+        {% for e in history %}
+        <li>
+          <p class="tsp-history-head"><strong>{{ e.get_kind_display }}</strong>
+            {% if e.to_status %}<span class="tsp-pill s-{{ e.to_status }}">{{ e.get_to_status_display }}</span>{% endif %}
+            <span class="tsp-muted">{{ e.actor_label|default:"—" }} · {{ e.created_at|date:"d M Y H:i" }}</span></p>
+          {% if e.text %}<blockquote>{{ e.text|linebreaksbr }}</blockquote>{% endif %}
+          {% if e.data.commit %}<p class="tsp-muted">Commit {{ e.data.commit|slice:":10" }}{% if e.data.branch %} en {{ e.data.branch }}{% endif %}{% if e.data.message %} · {{ e.data.message }}{% endif %}</p>{% endif %}
+          {% if e.data.child %}<p class="tsp-muted">{% translate "Chained" %} <a href="{% url 'ticketshot:panel_detail' e.data.child %}">{{ e.data.child }}</a></p>{% endif %}
+          {% if e.data.chained %}<p class="tsp-muted">{% translate "With a new capture from" %} <a href="{% url 'ticketshot:panel_detail' e.data.chained %}">{{ e.data.chained }}</a></p>{% endif %}
+          {% if e.data.template %}<p class="tsp-muted tsp-break">URL replicable: {{ e.data.template }}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <details class="tsp-card tsp-tech">
+      <summary>{% translate "Technical data" %}</summary>
+      <h3>{% translate "Server context" %}</h3><pre>{{ server_json }}</pre>
+      <h3>{% translate "Browser context" %}</h3><pre>{{ client_json }}</pre>
+      {% if logs_json %}<h3>{% translate "Console and network" %}</h3><pre>{{ logs_json }}</pre>{% endif %}
+    </details>
+  </div>
+
+  <aside class="tsp-col-side">
+    {% if in_review and can.approve %}
+    <section class="tsp-card tsp-decide" aria-labelledby="h-decide">
+      <h2 id="h-decide">{% translate "Your review" %}</h2>
+      {% if links %}<p><a class="tsp-btn tsp-block" href="{{ links.compare }}">{% translate "Compare in the live view" %}</a></p>{% endif %}
+      <form method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">
+        {% csrf_token %}<input type="hidden" name="action" value="approve">
+        <label class="tsp-field"><span>{% translate "Comment (optional)" %}</span><textarea name="text" rows="2"></textarea></label>
+        <button class="tsp-btn tsp-primary tsp-block" type="submit">Aprobar {{ ticket.key }}</button>
+      </form>
+      <form method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">
+        {% csrf_token %}<input type="hidden" name="action" value="reject">
+        <label class="tsp-field"><span>{% translate "What is still not working?" %}</span><textarea name="text" rows="3" required></textarea></label>
+        <button class="tsp-btn tsp-block" type="submit">{% translate "Reject with this note" %}</button>
+      </form>
+      {% if links %}<p class="tsp-muted">{% translate "If the screen changed and the original capture is no longer enough," %} <a href="{{ links.chain }}">{% translate "create a chained ticket with a new capture" %}</a>.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    <section class="tsp-card" aria-labelledby="h-view">
+      <h2 id="h-view">{% translate "The view" %}</h2>
+      <dl class="tsp-dl">
+        <dt>{% translate "Trigger URL" %}</dt><dd class="tsp-break">{% if links %}<a href="{{ links.open }}">{{ ticket.trigger_path }}</a>{% else %}La ruta guardada de este ticket no es segura{% endif %}</dd>
+        {% if ticket.view_name %}<dt>{% translate "View" %}</dt><dd class="tsp-break">{{ ticket.view_name }}</dd>{% endif %}
+        <dt>{% translate "Reproducible URL" %}</dt><dd class="tsp-break">{{ ticket.url_template|default:"—" }}</dd>
+        {% if ticket.url_tags %}<dt>Tags</dt><dd><ul class="tsp-tags">{% for name, description in ticket.url_tags.items %}<li><code>{{ name }}</code>: {{ description }}</li>{% endfor %}</ul></dd>{% endif %}
+        <dt>{% translate "Created by" %}</dt><dd>{{ ticket.author_label|default:"—" }}{% if ticket.author_groups %} <span class="tsp-muted">({{ ticket.author_groups|join:", " }})</span>{% endif %}</dd>
+        <dt>{% translate "Created" %}</dt><dd>{{ ticket.created_at|date:"d M Y H:i" }}</dd>
+        {% if ticket.base_url %}<dt>{% translate "System" %}</dt><dd class="tsp-break">{{ ticket.base_url }}</dd>{% endif %}
+        {% if ticket.app_version or ticket.revision.commit %}<dt>{% translate "Capture version" %}</dt><dd>{{ ticket.app_version }} {% if ticket.revision.commit %}· {{ ticket.revision.commit|slice:":10" }}{% endif %} {% if ticket.revision.branch %}· {{ ticket.revision.branch }}{% endif %}</dd>{% endif %}
+        {% if ticket.implemented_commit %}<dt>{% translate "Implementation" %}</dt><dd>{{ ticket.implemented_commit|slice:":10" }}{% if ticket.implemented_branch %} · {{ ticket.implemented_branch }}{% endif %}</dd>{% endif %}
+        {% if ticket.parent %}<dt>{% translate "Chained to" %}</dt><dd><a href="{% url 'ticketshot:panel_detail' ticket.parent.key %}">{{ ticket.parent.key }}</a> · {{ ticket.parent.get_status_display }}</dd>{% endif %}
+        {% if children %}<dt>{% translate "Chained tickets" %}</dt><dd>{% for c in children %}<a href="{% url 'ticketshot:panel_detail' c.key %}">{{ c.key }}</a> ({{ c.get_status_display }}){% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+      </dl>
+    </section>
+
+    {% if can.work %}
+    <section class="tsp-card" aria-labelledby="h-work">
+      <h2 id="h-work">{% translate "Team" %}</h2>
+      {% if moves %}
+      <form method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}" class="tsp-moves">
+        {% csrf_token %}<input type="hidden" name="action" value="status">
+        <label class="tsp-field"><span>{% translate "Change note (optional)" %}</span><input type="text" name="text" maxlength="500"></label>
+        {% for to, label in moves %}<button class="tsp-btn" type="submit" name="to" value="{{ to }}">Pasar a «{{ label }}»</button>{% endfor %}
+      </form>
+      {% else %}
+      <p class="tsp-muted">{% translate "This ticket is already closed." %}</p>
+      {% endif %}
+      <form method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">
+        {% csrf_token %}<input type="hidden" name="action" value="template">
+        <label class="tsp-field"><span>{% translate "Reproducible URL" %}</span><input type="text" name="template" value="{{ ticket.url_template }}" placeholder="/customers/{customer}/record/"></label>
+        <label class="tsp-field"><span>{% translate "Where each tag comes from (one per line, “tag: description”)" %}</span><textarea name="tags" rows="3">{{ tags_text }}</textarea></label>
+        <button class="tsp-btn tsp-block" type="submit">{% translate "Save reproducible URL" %}</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if can.comment %}
+    <section class="tsp-card" aria-labelledby="h-comment">
+      <h2 id="h-comment">{% translate "Comment" %}</h2>
+      <form method="post" action="{% url 'ticketshot:ticket_action' ticket.key %}">
+        {% csrf_token %}<input type="hidden" name="action" value="comment">
+        <label class="tsp-field"><span>{% translate "Comment" %}</span><textarea name="text" rows="3" required></textarea></label>
+        <button class="tsp-btn tsp-block" type="submit">{% translate "Add to history" %}</button>
+      </form>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

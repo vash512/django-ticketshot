@@ -1,0 +1,73 @@
+{% extends "ticketshot/panel/base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Tickets" %}{% endblock %}
+{% block content %}
+<div class="tsp-head">
+  <h1>{% translate "Review tickets" %}</h1>
+  <p class="tsp-lead">{% translate "The approved version is the live view. Each ticket records how it looked before the change." %}</p>
+</div>
+
+<nav class="tsp-tabs" aria-label="{% translate "Statuses" %}">
+  {% for tab in tabs %}
+  <a class="tsp-tab{% if tab.active %} is-active{% endif %}" href="?view=list&status={{ tab.slug }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if device %}&device={{ device }}{% endif %}"{% if tab.active %} aria-current="page"{% endif %}>
+    {{ tab.label }} <span class="tsp-count">{{ tab.count }}</span>
+  </a>
+  {% endfor %}
+</nav>
+
+<form class="tsp-filters" method="get" role="search">
+  <input type="hidden" name="view" value="list">
+  <input type="hidden" name="status" value="{{ current }}">
+  <label class="tsp-field tsp-field-grow">
+    <span>{% translate "Search" %}</span>
+    <input type="search" name="q" value="{{ query }}" placeholder="{% translate "Key, text, path, or author" %}">
+  </label>
+  <label class="tsp-field">
+    <span>{% translate "Device" %}</span>
+    <select name="device">
+      <option value="">{% translate "All" %}</option>
+      {% for value, label in devices %}<option value="{{ value }}"{% if value == device %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="tsp-btn" type="submit">{% translate "Filter" %}</button>
+</form>
+
+{% if page.object_list %}
+<ul class="tsp-list">
+  {% for t in page.object_list %}
+  <li class="tsp-row">
+    <a class="tsp-row-link" href="{% url 'ticketshot:panel_detail' t.key %}">
+      <span class="tsp-row-top">
+        <strong class="tsp-key">{{ t.key }}</strong>
+        <span class="tsp-pill s-{{ t.status }}">{{ t.get_status_display }}</span>
+        {% if t.is_new %}<span class="tsp-new">{% translate "Updates" %}</span>{% endif %}
+        {% if t.kind == "recording" %}<span class="tsp-tag">{% translate "Recorded flow" %}</span>{% endif %}
+        {% if t.source == "skill" %}<span class="tsp-tag">{% translate "Unsolicited" %}</span>{% endif %}
+      </span>
+      <span class="tsp-row-note">{{ t.note|truncatechars:180 }}</span>
+      <span class="tsp-row-meta">
+        <span title="{% translate "Trigger URL" %}">{{ t.trigger_path|truncatechars:70 }}</span>
+        <span>{{ t.get_device_display }}</span>
+        <span>{% blocktranslate count count=t.image_count %}{{ count }} capture{% plural %}{{ count }} captures{% endblocktranslate %}</span>
+        <span>{{ t.author_label|default:"—" }}</span>
+        <span>{{ t.updated_at|date:"d M Y H:i" }}</span>
+        {% if t.parent %}<span>{% translate "Chained to" %} {{ t.parent.key }}</span>{% endif %}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% if page.has_other_pages %}
+<nav class="tsp-pager" aria-label="{% translate "Pages" %}">
+  {% if page.has_previous %}<a class="tsp-btn" href="?view=list&status={{ current }}&q={{ query|urlencode }}&device={{ device }}&page={{ page.previous_page_number }}">{% translate "Previous" %}</a>{% endif %}
+  <span>{% blocktranslate with number=page.number total=page.paginator.num_pages %}Page {{ number }} of {{ total }}{% endblocktranslate %}</span>
+  {% if page.has_next %}<a class="tsp-btn" href="?view=list&status={{ current }}&q={{ query|urlencode }}&device={{ device }}&page={{ page.next_page_number }}">{% translate "Next" %}</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+<div class="tsp-empty">
+  <p><strong>{% translate "No tickets match this filter." %}</strong></p>
+  <p>{% translate "A view with no tickets is considered approved." %}</p>
+</div>
+{% endif %}
+{% endblock %}
