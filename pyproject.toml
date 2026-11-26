@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-ticketshot"
+dynamic = ["version"]
+description = "Review tickets for Django: an in-page bar with screenshots and annotations, a review panel, a separate tickets database, and recorded flows with a server-side debug log."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "Django>=4.2,<6.2",
+    "Pillow>=9.4",
+]
+classifiers = [
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.2",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Natural Language :: English",
+    "Natural Language :: Spanish",
+]
+
+[project.optional-dependencies]
+# `storage` mode works with any Django storage backend; S3 is the
+# recommended choice for production.
+s3 = ["django-storages[s3]>=1.13"]
+dev = ["coverage>=7", "radon>=6"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ticketshot.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ticketshot = [
+    "templates/ticketshot/*.html",
+    "templates/ticketshot/panel/*.html",
+    "static/ticketshot/*.css",
+    "static/ticketshot/bar-*/*.js",
+    "static/ticketshot/vendor/*",
+    "locale/*/LC_MESSAGES/*.po",
+    "locale/*/LC_MESSAGES/*.mo",
+    "locale/*/LC_MESSAGES/*.json",
+]
+
+[tool.coverage.run]
+source = ["src/ticketshot"]
+omit = ["*/migrations/*"]
