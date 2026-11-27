@@ -208,6 +208,13 @@ browser; `editor`, `composer`, `compare`, `ask`, and `bar` are the interface.
   in the bar). The language is Django's active one, not a ticketshot option.
   The bar translates whole strings only, so a missing entry shows English
   instead of a mixed sentence.
+- **The project's pages keep their language (2026-11-26).** The middleware
+  used to wrap the whole request in `override("es"|"en")`, so a project in
+  `es-mx` rendered its own pages with Spain's formats (`6,00` instead of
+  `6.00`), even with the bar disabled. Now `own_language()` only wraps
+  ticketshot's own views and what it adds to a page (the bar and the debug
+  record), and a Spanish variant is left active because it already reads the
+  `es` catalog.
 
 ## How it got here
 

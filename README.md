@@ -274,6 +274,11 @@ English. On the server, a language without a catalog falls back to the
 project's `LANGUAGE_CODE`, as Django does. Status keys, URLs, and stored data
 are language independent.
 
+The middleware never changes the language of the project's own pages: they
+keep the active language and its number and date formats (`es-mx` stays
+`es-mx`, not `es`). Only ticketshot's panel, its API, and the bar it injects
+switch to English for a language without a catalog.
+
 ## Privacy
 
 - The image is flattened in the browser with its annotations and redactions.

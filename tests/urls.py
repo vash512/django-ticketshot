@@ -2,7 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.template.defaultfilters import floatformat
 from django.urls import include, path
+from django.utils.translation import get_language
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -60,6 +62,12 @@ def data(request):
     return JsonResponse({"ok": True})
 
 
+def locale_probe(request):
+    """Report the language and number format the project's view ran with."""
+    return HttpResponse(
+        f"<html><body><p id='probe'>{get_language()}|{floatformat(6, 2)}</p></body></html>")
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("__ticketshot/", include("ticketshot.urls")),
@@ -75,4 +83,5 @@ urlpatterns = [
     path("touches-tickets/", touches_tickets, name="touches_tickets"),
     path("two-bodies/", two_bodies, name="two_bodies"),
     path("data/", data, name="data"),
+    path("locale-probe/", locale_probe, name="locale_probe"),
 ]

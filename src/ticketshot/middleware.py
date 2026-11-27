@@ -7,7 +7,7 @@ from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
 from django.utils.cache import patch_cache_control
-from django.utils.translation import override
+from django.utils.translation import get_language, override
 
 from . import __version__, assets, conf, debuglog, pagecontext, permissions, users
 
@@ -29,11 +29,29 @@ def _own_prefix():
     return create.rsplit("tickets/", 1)[0] if create else None
 
 
-def skip_path(path):
+def is_own_path(path):
+    """Tell whether the path belongs to ticketshot's own views."""
     own = _own_prefix()
-    if own and path.startswith(own):
-        return True
-    return any(path.startswith(p) for p in conf.current().exclude_paths)
+    return bool(own) and path.startswith(own)
+
+
+def skip_path(path):
+    return is_own_path(path) or any(
+        path.startswith(p) for p in conf.current().exclude_paths)
+
+
+def own_language():
+    """Return the context in which ticketshot renders its own text.
+
+    Only Spanish is translated; any other language is shown in English. A
+    Spanish variant such as ``es-mx`` already reads the ``es`` catalog, so it
+    stays active and keeps the project's number and date formats. Never wrap
+    the project's views with it: they must run in the project's language.
+    """
+    language = conf.language()
+    if (get_language() or "").lower().split("-")[0] == language:
+        return contextlib.nullcontext()
+    return override(language)
 
 
 def injectable(response):
@@ -123,8 +141,10 @@ class TicketShotMiddleware:
         return debuglog.Collector(request, recording) if recording else None
 
     def __call__(self, request):
-        with override(conf.language()):
-            return self._respond(request)
+        if is_own_path(request.path_info):
+            with own_language():
+                return self.get_response(request)
+        return self._respond(request)
 
     def _respond(self, request):
         if not conf.current().enabled or skip_path(request.path_info):
@@ -136,10 +156,12 @@ class TicketShotMiddleware:
         listener = collector.on_query if collector is not None else None
         with pagecontext.Tracker(listener) as tracker, (collector or contextlib.nullcontext()):
             response = self.get_response(request)
-        if collector is not None:
-            _record(collector, request, response, tracker.elapsed_ms)
-        if injectable(response):
-            inject(request, response, tracker)
+        # Only what ticketshot adds uses its language, never the project's view.
+        with own_language():
+            if collector is not None:
+                _record(collector, request, response, tracker.elapsed_ms)
+            if injectable(response):
+                inject(request, response, tracker)
         return response
 
     def process_exception(self, request, exception):
