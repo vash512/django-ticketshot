@@ -336,3 +336,7 @@ tools: `crapper` (complexity weighted by missing coverage; no function at CRAP
 10 or more), `dryer` (duplication at 0.8 or more), and `mutator` (mutation
 testing). How to run them here: `CLAUDE.md`. They are expensive: use them for
 foundations or bounded pieces.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

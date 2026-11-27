@@ -7,12 +7,14 @@ name = "django-ticketshot"
 dynamic = ["version"]
 description = "Review tickets for Django: an in-page bar with screenshots and annotations, a review panel, a separate tickets database, and recorded flows with a server-side debug log."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
     "Django>=4.2,<6.2",
     "Pillow>=9.4",
 ]
 classifiers = [
+    "License :: OSI Approved :: MIT License",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.2",
